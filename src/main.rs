@@ -1,6 +1,6 @@
 use bitset::BitSet;
 
-const fn collatz_1_step(n: u128) -> u128 {
+const fn _collatz_1_step(n: u128) -> u128 {
     if n.is_multiple_of(2) {
         n >> 1
     } else {
@@ -127,6 +127,9 @@ impl CollatzChecker {
                     if n < start {
                         // we have already checked the numbers below and they are not counter-examples
                         break;
+                    } else if n == start {
+                        println!("Counter example found: {}", start);
+                        return;
                     }
                     if !eligible_mods_lookup.test((n & MOD_K_MASK) as usize) {
                         break;
