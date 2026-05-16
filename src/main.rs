@@ -82,67 +82,55 @@ fn eligible_congruence(max_k: u8) -> Vec<u128> {
     mods
 }
 
-struct CollatzChecker {
-    steps_since_last_print: u128,
-}
-
-impl CollatzChecker {
-    fn new() -> Self {
-        Self {
-            steps_since_last_print: 0,
+fn check_to(max: u128) {
+    let eligible_mods = eligible_congruence(MOD_K as u8);
+    let eligible_mods_lookup = {
+        let mut set = BitSet::with_capacity(1 << MOD_K);
+        for &m in eligible_mods.iter() {
+            set.set(m as usize, true);
         }
-    }
+        set
+    };
 
-    fn check_to(mut self, max: u128) {
-        let eligible_mods = eligible_congruence(MOD_K as u8);
-        let eligible_mods_lookup = {
-            let mut set = BitSet::with_capacity(1 << MOD_K);
-            for &m in eligible_mods.iter() {
-                set.set(m as usize, true);
-            }
-            set
-        };
+    let mut steps_since_last_print = 0;
 
-        for bin in 0..=(max >> MOD_K) {
-            if bin.is_multiple_of((1_000_000_000 >> MOD_K) + 1) {
-                println!(
-                    "Checking {} B    (step ratio: {:.3} %)",
-                    (bin << MOD_K) / 1_000_000_000,
-                    self.steps_since_last_print as f64 * 100.0 / 1_000_000_000.0
-                );
-                self.steps_since_last_print = 0;
-            }
+    for bin in 0..=(max >> MOD_K) {
+        if bin.is_multiple_of((1_000_000_000 >> MOD_K) + 1) {
+            println!(
+                "Checking {} B    (step ratio: {:.3} %)",
+                (bin << MOD_K) / 1_000_000_000,
+                steps_since_last_print as f64 * 100.0 / 1_000_000_000.0
+            );
+            steps_since_last_print = 0;
+        }
 
-            let mut steps = 0;
-            for &m in eligible_mods.iter() {
-                let start = (bin << MOD_K) ^ m;
+        for &m in eligible_mods.iter() {
+            let start = (bin << MOD_K) ^ m;
 
-                let mut n = start;
-                while n > 4 {
-                    // we're not yet in the trivial cycle
+            let mut n = start;
+            while n > 4 {
+                // we're not yet in the trivial cycle
 
-                    n = collatz_k_steps(n);
-                    steps += 1;
+                n = collatz_k_steps(n);
+                steps_since_last_print += 1;
 
-                    if n < start {
-                        // we have already checked the numbers below and they are not counter-examples
-                        break;
-                    } else if n == start {
-                        println!("Counter example found: {}", start);
-                        return;
-                    }
-                    if !eligible_mods_lookup.test((n & MOD_K_MASK) as usize) {
-                        break;
-                    }
+                if n < start {
+                    // we have already checked the numbers below and they are not counter-examples
+                    break;
+                } else if n == start {
+                    println!("Counter example found: {}", start);
+                    return;
+                }
+                if !eligible_mods_lookup.test((n & MOD_K_MASK) as usize) {
+                    break;
                 }
             }
-            self.steps_since_last_print += steps;
         }
     }
 }
 
 fn main() {
-    CollatzChecker::new().check_to(1_000_000_000_000);
+    check_to(1_000_000_000_000);
 }
 
 /*
